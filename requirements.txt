@@ -89,7 +89,7 @@ trio-websocket==0.12.2
 twine==3.8.0
 TwoCaptcha==0.0.1
 typing-inspection==0.4.1
-typing_extensions==4.14.1
+typing_extensions==4.13.2
 undetected-chromedriver==3.5.5
 uritemplate==4.2.0
 urllib3==2.4.0
