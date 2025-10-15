@@ -1,0 +1,24 @@
+[Unit]
+Description=Indicome Telegram Bot - Always Running
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/Indicome
+ExecStart=/root/Indicome/venv/bin/python3 /root/Indicome/main_simple.py
+
+# Auto-restart on crash
+Restart=always
+RestartSec=10
+
+# Environment
+Environment="PYTHONUNBUFFERED=1"
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
