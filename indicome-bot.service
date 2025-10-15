@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/root/Indicome
-ExecStart=/root/Indicome/venv/bin/python3 /root/Indicome/main_simple.py
+ExecStart=/root/Indicome/venv/bin/python3 /root/Indicome/main.py
 
 # Auto-restart on crash
 Restart=always
