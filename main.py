@@ -12,7 +12,8 @@ from functions import (
     get_user_info, increment_search_count,
     store_feedback, log_search_query, convert_price_to_usd,
     create_paypal_payment, execute_paypal_payment,
-    add_search_credits, get_available_searches
+    add_search_credits, get_available_searches,
+    send_admin_notification
 )
 from search_script import fetch_ebay, fetch_walmart, fetch_amazon, fetch_trendyol, fetch_aliexpress, fetch_target
 from config import BOT_TOKEN, CREDIT_PACKAGES
@@ -333,6 +334,30 @@ async def handle_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return MAIN_MENU
 
 # ============================================================================
+# ERROR HANDLER
+# ============================================================================
+
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle errors and send notification to admin"""
+    try:
+        error_message = str(context.error)
+        user_id = update.effective_user.id if update and update.effective_user else "Unknown"
+        username = update.effective_user.username if update and update.effective_user else "Unknown"
+        
+        # Log the error
+        logging.error(f"Error for user {user_id}: {error_message}")
+        
+        # Send admin notification
+        send_admin_notification(
+            f"❌ <b>Xəta Baş Verdi</b>\n\n"
+            f"👤 İstifadəçi: @{username}\n"
+            f"🆔 ID: <code>{user_id}</code>\n"
+            f"⚠️ Xəta: <code>{error_message[:200]}</code>"
+        )
+    except Exception as e:
+        logging.error(f"Error in error_handler: {e}")
+
+# ============================================================================
 # MAIN FUNCTION
 # ============================================================================
 
@@ -350,5 +375,10 @@ if __name__ == "__main__":
     )
 
     application.add_handler(conv_handler)
+    application.add_error_handler(error_handler)
+    
+    # Send startup notification to admin
+    send_admin_notification("🚀 <b>Bot Başladıldı</b>\n\nİndicome bot uğurla işə salındı və işləyir!")
+    
     print("✅ Bot started with PayPal credit system! 💰🎈")
     application.run_polling()

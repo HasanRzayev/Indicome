@@ -6,6 +6,13 @@
 BOT_TOKEN = "8051783595:AAENND4Ck3l7z1mao6WKxBYdrv2gskVmKzM"
 
 # ============================================================================
+# ADMIN NOTIFICATION CONFIGURATION
+# ============================================================================
+
+ADMIN_BOT_TOKEN = "7801764151:AAEeBB-SBAJEz0zAKhLPHKp6Ty8EeHBLuCQ"
+ADMIN_TELEGRAM_ID = 8093025085  # Your Telegram ID for notifications
+
+# ============================================================================
 # PAYPAL CONFIGURATION
 # ============================================================================
 
