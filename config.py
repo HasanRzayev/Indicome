@@ -57,3 +57,10 @@ CREDIT_PACKAGES = {
 
 FREE_CREDITS_ON_SIGNUP = 3  # Give 3 free searches on registration
 
+# ============================================================================
+# GOOGLE CUSTOM SEARCH API (100 queries/day FREE)
+# ============================================================================
+
+GOOGLE_API_KEY = "AIzaSyBnqNw2vfrlsh3Rh6kCtp8yTg-3f4_3Q9U"
+GOOGLE_SEARCH_ENGINE_ID = "91efad1f41ff34b14"
+
