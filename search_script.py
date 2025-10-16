@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-REAL WORKING SCRAPERS - eBay, Walmart, Amazon
-Tested and verified to return actual products
+REAL WORKING SCRAPERS - Minimal and Reliable
 """
 
 import requests
@@ -14,29 +13,26 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Accept-Language': 'en-US,en;q=0.5',
 }
 
 def clean_price(text):
-    """Extract price from text"""
     if not text:
-        return "N/A"
+        return "Check site"
     match = re.search(r'\$?\s*(\d+[,.]?\d*)', text)
     if match:
         return f"${match.group(1)}"
-    return "N/A"
+    return "Check site"
 
 # ============================================================================
-# EBAY - REAL SCRAPER
+# EBAY
 # ============================================================================
 
 def fetch_ebay(query):
-    """eBay scraper - returns real products"""
     try:
         url = f"https://www.ebay.com/sch/i.html?_nkw={urllib.parse.quote(query)}"
-        logging.info(f"[eBay] Searching: {url}")
+        logging.info(f"[eBay] {url}")
         
         resp = requests.get(url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(resp.text, 'html.parser')
@@ -46,24 +42,19 @@ def fetch_ebay(query):
         
         for item in items[:10]:
             try:
-                # Title
-                title_elem = item.find('h3', class_='s-item__title')
-                if not title_elem:
-                    title_elem = item.find('div', class_='s-item__title')
+                title_elem = item.find('div', class_='s-item__title')
                 if not title_elem:
                     continue
                     
                 title = title_elem.get_text(strip=True)
-                if 'Shop on eBay' in title or not title:
+                if 'Shop on eBay' in title:
                     continue
                 
-                # Link
                 link_elem = item.find('a', class_='s-item__link')
-                if not link_elem or not link_elem.get('href'):
+                if not link_elem:
                     continue
-                link = link_elem['href']
+                link = link_elem.get('href', '')
                 
-                # Price
                 price_elem = item.find('span', class_='s-item__price')
                 price = clean_price(price_elem.get_text() if price_elem else "")
                 
@@ -76,26 +67,22 @@ def fetch_ebay(query):
                 
                 if len(results) >= 3:
                     break
-                    
-            except Exception as e:
+            except:
                 continue
         
-        logging.info(f"[eBay] Found {len(results)} results")
+        logging.info(f"[eBay] {len(results)} results")
         return results
-        
-    except Exception as e:
-        logging.error(f"[eBay] Error: {e}")
+    except:
         return []
 
 # ============================================================================
-# WALMART - REAL SCRAPER
+# WALMART
 # ============================================================================
 
 def fetch_walmart(query):
-    """Walmart scraper - returns real products"""
     try:
         url = f"https://www.walmart.com/search?q={urllib.parse.quote(query)}"
-        logging.info(f"[Walmart] Searching: {url}")
+        logging.info(f"[Walmart] {url}")
         
         resp = requests.get(url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(resp.text, 'html.parser')
@@ -103,60 +90,48 @@ def fetch_walmart(query):
         results = []
         links = soup.find_all('a', href=re.compile(r'/ip/'))
         
-        seen_urls = set()
-        
+        seen = set()
         for link in links[:20]:
             try:
-                url = link.get('href', '')
-                if not url or url in seen_urls:
+                href = link.get('href', '')
+                if not href or href in seen:
                     continue
-                    
-                seen_urls.add(url)
+                seen.add(href)
                 
                 title = link.get('aria-label', '') or link.get_text(strip=True)
                 if not title or len(title) < 5:
                     continue
                 
-                if url.startswith('/'):
-                    url = 'https://www.walmart.com' + url
+                if href.startswith('/'):
+                    href = 'https://www.walmart.com' + href
                 
-                # Find price
                 price = "Check site"
-                parent = link.find_parent('div')
-                if parent:
-                    price_span = parent.find('span', text=re.compile(r'\$'))
-                    if price_span:
-                        price = clean_price(price_span.get_text())
                 
                 results.append({
                     "site": "Walmart",
                     "title": title[:100],
-                    "link": url,
+                    "link": href.split('?')[0],  # Remove query params
                     "price": price
                 })
                 
                 if len(results) >= 3:
                     break
-                    
-            except Exception as e:
+            except:
                 continue
         
-        logging.info(f"[Walmart] Found {len(results)} results")
+        logging.info(f"[Walmart] {len(results)} results")
         return results
-        
-    except Exception as e:
-        logging.error(f"[Walmart] Error: {e}")
+    except:
         return []
 
 # ============================================================================
-# AMAZON - REAL SCRAPER
+# AMAZON
 # ============================================================================
 
 def fetch_amazon(query):
-    """Amazon scraper - returns real products"""
     try:
         url = f"https://www.amazon.com/s?k={urllib.parse.quote(query)}"
-        logging.info(f"[Amazon] Searching: {url}")
+        logging.info(f"[Amazon] {url}")
         
         resp = requests.get(url, headers=HEADERS, timeout=10)
         soup = BeautifulSoup(resp.text, 'html.parser')
@@ -166,43 +141,42 @@ def fetch_amazon(query):
         
         for product in products[:10]:
             try:
-                # Title
-                title_elem = product.find('h2')
-                if not title_elem:
+                h2 = product.find('h2')
+                if not h2:
                     continue
-                    
-                title_link = title_elem.find('a')
-                if not title_link:
-                    continue
-                    
-                title = title_link.get_text(strip=True)
-                link = 'https://www.amazon.com' + title_link.get('href', '')
                 
-                # Price
-                price_whole = product.find('span', class_='a-price-whole')
-                if price_whole:
-                    price = f"${price_whole.get_text(strip=True)}"
-                else:
-                    price = "See site"
+                link_tag = h2.find('a')
+                if not link_tag:
+                    continue
+                
+                title = link_tag.get_text(strip=True)
+                href = link_tag.get('href', '')
+                
+                if href.startswith('/'):
+                    href = 'https://www.amazon.com' + href
+                
+                # Clean Amazon link
+                if '/dp/' in href or '/gp/' in href:
+                    href = href.split('?')[0]  # Remove tracking
+                
+                price_elem = product.find('span', class_='a-price-whole')
+                price = f"${price_elem.get_text(strip=True)}" if price_elem else "Check site"
                 
                 results.append({
                     "site": "Amazon",
                     "title": title,
-                    "link": link,
+                    "link": href,
                     "price": price
                 })
                 
                 if len(results) >= 3:
                     break
-                    
-            except Exception as e:
+            except:
                 continue
         
-        logging.info(f"[Amazon] Found {len(results)} results")
+        logging.info(f"[Amazon] {len(results)} results")
         return results
-        
-    except Exception as e:
-        logging.error(f"[Amazon] Error: {e}")
+    except:
         return []
 
 # ============================================================================
@@ -210,16 +184,13 @@ def fetch_amazon(query):
 # ============================================================================
 
 def fetch_trendyol(query):
-    """Trendyol - placeholder"""
-    logging.info(f"[Trendyol] Skipped")
+    logging.info(f"[Trendyol] Skipped (requires JS)")
     return []
 
 def fetch_aliexpress(query):
-    """AliExpress - placeholder"""
-    logging.info(f"[AliExpress] Skipped")
+    logging.info(f"[AliExpress] Skipped (requires JS)")
     return []
 
 def fetch_target(query):
-    """Target - placeholder"""
-    logging.info(f"[Target] Skipped")
+    logging.info(f"[Target] Skipped (requires JS)")
     return []
