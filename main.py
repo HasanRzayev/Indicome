@@ -2,7 +2,7 @@
 import logging
 import asyncio
 from collections import defaultdict
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, Bot
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler,
     ContextTypes, ConversationHandler, filters
@@ -83,8 +83,8 @@ async def show_search_results(update, context, products, query, filter_type="all
     for i, product in enumerate(filtered_products[:10], 1):
         message += f"{i}. 🌐 *{product['site']}*\n"
         message += f"   📦 {product['title'][:60]}...\n"
-        message += f"   💰 {product['price']}\n"
-        message += f"   [🔗 Bax]({product['link']})\n\n"
+        message += f"   💰 *Qiymət:* {product['price']}\n"
+        message += f"   [🔗 Məhsula Bax]({product['link']})\n\n"
     
     if len(filtered_products) > 10:
         message += f"_...və daha {len(filtered_products) - 10} məhsul_\n\n"
@@ -226,8 +226,8 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for i, product in enumerate(filtered[:10], 1):
             message += f"{i}. 🌐 *{product['site']}*\n"
             message += f"   📦 {product['title'][:60]}...\n"
-            message += f"   💰 {product['price']}\n"
-            message += f"   [🔗 Bax]({product['link']})\n\n"
+            message += f"   💰 *Qiymət:* {product['price']}\n"
+            message += f"   [🔗 Məhsula Bax]({product['link']})\n\n"
         
         if len(filtered) > 10:
             message += f"_...və daha {len(filtered) - 10} məhsul_\n\n"
@@ -433,9 +433,33 @@ async def handle_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     telegram_id = update.message.from_user.id
+    username = update.message.from_user.username or "Unknown"
+    first_name = update.message.from_user.first_name or "User"
     feedback_text = update.message.text.strip()
+    
+    # Save feedback to database
     store_feedback(telegram_id, feedback_text)
-    await update.message.reply_text("✅ Thank you for your feedback!", reply_markup=main_menu_buttons())
+    
+    # Send to admin via notification bot
+    from config import ADMIN_BOT_TOKEN, ADMIN_TELEGRAM_ID
+    try:
+        admin_bot = Bot(ADMIN_BOT_TOKEN)
+        notification_message = (
+            f"💬 <b>Yeni Feedback!</b>\n\n"
+            f"👤 İstifadəçi: @{username}\n"
+            f"🆔 ID: {telegram_id}\n"
+            f"📝 Ad: {first_name}\n\n"
+            f"<b>Mesaj:</b>\n{feedback_text}"
+        )
+        await admin_bot.send_message(
+            chat_id=ADMIN_TELEGRAM_ID,
+            text=notification_message,
+            parse_mode='HTML'
+        )
+    except Exception as e:
+        logging.error(f"Failed to send feedback notification: {e}")
+    
+    await update.message.reply_text("✅ Thank you for your feedback! We appreciate it.", reply_markup=main_menu_buttons())
     return MAIN_MENU
 
 # ============================================================================
