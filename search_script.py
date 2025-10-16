@@ -66,7 +66,7 @@ def fetch_google_shopping(query, num_results=20):
         
         if response.status_code != 200:
             logging.error(f"[Google] Error {response.status_code}: {response.text}")
-        return []
+            return []
 
         data = response.json()
         
