@@ -58,9 +58,29 @@ CREDIT_PACKAGES = {
 FREE_CREDITS_ON_SIGNUP = 3  # Give 3 free searches on registration
 
 # ============================================================================
-# GOOGLE CUSTOM SEARCH API (100 queries/day FREE)
+# GOOGLE CUSTOM SEARCH API (100 queries/day FREE per API)
+# Multiple APIs for backup/failover - 300 queries/day total!
 # ============================================================================
 
-GOOGLE_API_KEY = "AIzaSyBnqNw2vfrlsh3Rh6kCtp8yTg-3f4_3Q9U"
-GOOGLE_SEARCH_ENGINE_ID = "91efad1f41ff34b14"
+GOOGLE_API_KEYS = [
+    {
+        "api_key": "AIzaSyBnqNw2vfrlsh3Rh6kCtp8yTg-3f4_3Q9U",
+        "search_engine_id": "91efad1f41ff34b14",
+        "name": "API 1"
+    },
+    {
+        "api_key": "AIzaSyDHR8LZ_5VTode_I6v904pHL35wkyfgNrk",
+        "search_engine_id": "2078eb15f7d8b4b46",
+        "name": "API 2"
+    },
+    {
+        "api_key": "AIzaSyBazy-8ouqKiBn_LN_DGZk8Noz5GoRl9Xk",
+        "search_engine_id": "4525b4748c4de43a3",
+        "name": "API 3"
+    }
+]
+
+# Backward compatibility
+GOOGLE_API_KEY = GOOGLE_API_KEYS[0]["api_key"]
+GOOGLE_SEARCH_ENGINE_ID = GOOGLE_API_KEYS[0]["search_engine_id"]
 
