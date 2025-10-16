@@ -43,6 +43,71 @@ def main_menu_buttons():
         [InlineKeyboardButton("🚪 Exit", callback_data="exit")]
     ])
 
+async def show_search_results(update, context, products, query, filter_type="all"):
+    """Show search results with filter buttons"""
+    from search_script import filter_results
+    
+    # Filter results
+    filtered_products = filter_results(products, filter_type)
+    
+    # Create filter buttons
+    filter_buttons = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("💰 Ucuzdan →", callback_data=f"filter_cheapest"),
+            InlineKeyboardButton("💎 ← Bahalıdan", callback_data=f"filter_expensive")
+        ],
+        [
+            InlineKeyboardButton("🏆 Top 3 Ucuz", callback_data=f"filter_top3_cheap"),
+            InlineKeyboardButton("🌟 Top 5 Ucuz", callback_data=f"filter_top5_cheap")
+        ],
+        [InlineKeyboardButton("📊 Hamısı", callback_data=f"filter_all")],
+        [InlineKeyboardButton("🔙 Ana Menyu", callback_data="back_to_menu")]
+    ])
+    
+    # Filter name for display
+    filter_names = {
+        "all": "Bütün nəticələr",
+        "cheapest": "Ucuzdan bahалıya",
+        "expensive": "Bahалıdan ucuza",
+        "top3_cheap": "Ən ucuz 3",
+        "top5_cheap": "Ən ucuz 5"
+    }
+    
+    filter_display = filter_names.get(filter_type, "Bütün nəticələr")
+    
+    # Build message
+    message = f"🔍 *Axtarış:* {query}\n"
+    message += f"📊 *Filter:* {filter_display}\n"
+    message += f"🎯 *Tapıldı:* {len(filtered_products)} məhsul\n\n"
+    
+    for i, product in enumerate(filtered_products[:10], 1):
+        message += f"{i}. 🌐 *{product['site']}*\n"
+        message += f"   📦 {product['title'][:60]}...\n"
+        message += f"   💰 {product['price']}\n"
+        message += f"   [🔗 Bax]({product['link']})\n\n"
+    
+    if len(filtered_products) > 10:
+        message += f"_...və daha {len(filtered_products) - 10} məhsul_\n\n"
+    
+    message += "_Filter seçin:_"
+    
+    try:
+        await update.message.reply_text(
+            message,
+            parse_mode="Markdown",
+            reply_markup=filter_buttons,
+            disable_web_page_preview=True
+        )
+    except:
+        # If message is from callback, use different method
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=message,
+            parse_mode="Markdown",
+            reply_markup=filter_buttons,
+            disable_web_page_preview=True
+        )
+
 # ============================================================================
 # COMMAND HANDLERS
 # ============================================================================
@@ -111,6 +176,71 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data == "search":
         await query.edit_message_text("🔍 Enter the product name to search:")
         return GET_QUERY
+    
+    elif data.startswith("filter_"):
+        # Handle filter buttons
+        filter_type = data.replace("filter_", "")
+        
+        # Get saved results
+        saved_results = context.user_data.get('search_results', [])
+        saved_query = context.user_data.get('search_query', 'products')
+        
+        if not saved_results:
+            await query.edit_message_text("❌ No search results to filter. Please search again.")
+            return MAIN_MENU
+        
+        # Show filtered results
+        from search_script import filter_results
+        filtered = filter_results(saved_results, filter_type)
+        
+        # Filter names
+        filter_names = {
+            "all": "Bütün nəticələr",
+            "cheapest": "Ucuzdan bahалıya",
+            "expensive": "Bahалıdan ucuza",
+            "top3_cheap": "Ən ucuz 3",
+            "top5_cheap": "Ən ucuz 5"
+        }
+        
+        filter_display = filter_names.get(filter_type, "Bütün nəticələr")
+        
+        # Rebuild filter buttons
+        filter_buttons = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("💰 Ucuzdan →", callback_data="filter_cheapest"),
+                InlineKeyboardButton("💎 ← Bahalıdan", callback_data="filter_expensive")
+            ],
+            [
+                InlineKeyboardButton("🏆 Top 3 Ucuz", callback_data="filter_top3_cheap"),
+                InlineKeyboardButton("🌟 Top 5 Ucuz", callback_data="filter_top5_cheap")
+            ],
+            [InlineKeyboardButton("📊 Hamısı", callback_data="filter_all")],
+            [InlineKeyboardButton("🔙 Ana Menyu", callback_data="back_to_menu")]
+        ])
+        
+        # Build message
+        message = f"🔍 *Axtarış:* {saved_query}\n"
+        message += f"📊 *Filter:* {filter_display}\n"
+        message += f"🎯 *Göstərilir:* {len(filtered)} məhsul\n\n"
+        
+        for i, product in enumerate(filtered[:10], 1):
+            message += f"{i}. 🌐 *{product['site']}*\n"
+            message += f"   📦 {product['title'][:60]}...\n"
+            message += f"   💰 {product['price']}\n"
+            message += f"   [🔗 Bax]({product['link']})\n\n"
+        
+        if len(filtered) > 10:
+            message += f"_...və daha {len(filtered) - 10} məhsul_\n\n"
+        
+        message += "_Filter seçin:_"
+        
+        await query.edit_message_text(
+            message,
+            parse_mode="Markdown",
+            reply_markup=filter_buttons,
+            disable_web_page_preview=True
+        )
+        return MAIN_MENU
 
     elif data == "feedback":
         await query.edit_message_text("💬 Please type your feedback and press Enter:")
@@ -274,45 +404,20 @@ async def handle_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"🔎 Searching for *{query}*...", parse_mode="Markdown")
     log_search_query(telegram_id, query)
 
+    # Get products from Google (1 API call for ALL sites!)
     loop = asyncio.get_running_loop()
-    tasks = [
-        loop.run_in_executor(None, fetch_ebay, query),
-        loop.run_in_executor(None, fetch_walmart, query),
-        loop.run_in_executor(None, fetch_amazon, query),
-        loop.run_in_executor(None, fetch_trendyol, query),
-        loop.run_in_executor(None, fetch_aliexpress, query),
-        loop.run_in_executor(None, fetch_target, query)
-    ]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-
-    all_products = []
-    for res in results:
-        if isinstance(res, Exception):
-            logging.error(f"Search error: {res}")
-            continue
-        if isinstance(res, list):
-            all_products.extend(res)
+    all_products = await loop.run_in_executor(None, fetch_amazon, query)
 
     if not all_products:
         await update.message.reply_text("😔 Sorry, no results found.", reply_markup=main_menu_buttons())
         return MAIN_MENU
 
-    # Show one product per site (best result from each)
-    products_by_site = defaultdict(list)
-    for product in all_products:
-        products_by_site[product["site"]].append(product)
-
-    products_to_show = [products[0] for products in products_by_site.values() if products]
-
-    for product in products_to_show:
-        formatted_price = convert_price_to_usd(product["price"])
-        msg = (
-            f"🌐 *{product['site']}*\n"
-            f"📦 *Product*: {product['title']}\n"
-            f"💰 *Price*: {formatted_price}\n"
-            f"🔗 [Link]({product['link']})"
-        )
-        await update.message.reply_text(msg, parse_mode="Markdown", disable_web_page_preview=False)
+    # Save results to context for filtering
+    context.user_data['search_results'] = all_products
+    context.user_data['search_query'] = query
+    
+    # Show results with filter buttons
+    await show_search_results(update, context, all_products, query, filter_type="all")
 
     # Deduct 1 credit
     increment_search_count(telegram_id)
