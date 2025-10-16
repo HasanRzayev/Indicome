@@ -17,8 +17,8 @@ ADMIN_TELEGRAM_ID = 8093025085  # Your Telegram ID for notifications
 # ============================================================================
 
 PAYPAL_MODE = "sandbox"  # "sandbox" for testing, "live" for production
-PAYPAL_CLIENT_ID = "YOUR_PAYPAL_CLIENT_ID"
-PAYPAL_CLIENT_SECRET = "YOUR_PAYPAL_CLIENT_SECRET"
+PAYPAL_CLIENT_ID = "AaTBl7vZ-aaxFG1sRvvKM1rMxkB_An5-kCdvW42Fgry3t0ZgiWM2kM0XjkflPj2KwY5E4yzr7VZBditA"
+PAYPAL_CLIENT_SECRET = "EGbnhZIYwzE-XX4FR0wrguw4nW8iJuyLUpxI_vilIl5_pPpZuvOjKcfkWH0HSqxDja1yR4oz67w5lr0B"
 
 # Payment redirect URLs
 PAYMENT_SUCCESS_URL = "https://your-domain.com/payment/success"
