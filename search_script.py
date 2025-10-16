@@ -84,7 +84,7 @@ def fetch_google_shopping(query, num_results=20):
                 
                 # Skip if title too short
                 if len(title) < 15:
-                continue
+                    continue
 
                 # Extract site name from URL
                 site_name = extract_site_name(link)
