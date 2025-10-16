@@ -44,20 +44,21 @@ def extract_site_name(url):
 
 def fetch_google_shopping(query, num_results=20):
     """
-    Google Custom Search API - Get products from ALL sites
+    Google Custom Search API - Get products from E-COMMERCE sites only
+    Filters for Amazon, eBay, Walmart, Etsy, AliExpress product pages
     Uses ONLY 1 API request!
     """
     try:
         url = "https://www.googleapis.com/customsearch/v1"
         
-        # Search for shopping/product pages
-        search_query = f"{query} buy shop price product"
+        # Search ONLY on e-commerce sites with product keywords
+        search_query = f"{query} (site:amazon.com OR site:ebay.com OR site:walmart.com OR site:etsy.com OR site:aliexpress.com OR site:bestbuy.com OR site:newegg.com) (buy OR price OR product OR shop)"
         
         params = {
             'key': GOOGLE_API_KEY,
             'cx': GOOGLE_SEARCH_ENGINE_ID,
             'q': search_query,
-            'num': min(num_results, 10),  # Max 10 per request
+            'num': 10,  # Max 10 per request
         }
         
         logging.info(f"[Google] Searching: {query}")
@@ -66,13 +67,13 @@ def fetch_google_shopping(query, num_results=20):
         
         if response.status_code != 200:
             logging.error(f"[Google] Error {response.status_code}: {response.text}")
-            return []
+        return []
 
         data = response.json()
         
         if 'items' not in data:
             logging.warning(f"[Google] No results found")
-            return []
+        return []
 
         results = []
 
@@ -84,7 +85,20 @@ def fetch_google_shopping(query, num_results=20):
                 
                 # Skip if title too short
                 if len(title) < 15:
-                    continue
+                continue
+
+                # FILTER: Only product pages (not category/homepage)
+                # Amazon: /dp/, /gp/product/
+                # eBay: /itm/, /p/
+                # Walmart: /ip/
+                # Etsy: /listing/
+                # Best Buy: /site/...sku
+                product_indicators = ['/dp/', '/gp/product/', '/itm/', '/p/', '/ip/', '/listing/', 'sku=', '/product/']
+                
+                # Skip if not a product page
+                if not any(indicator in link for indicator in product_indicators):
+                    logging.debug(f"[Google] Skipping non-product page: {link}")
+            continue
 
                 # Extract site name from URL
                 site_name = extract_site_name(link)
