@@ -52,6 +52,9 @@ def site_selection_menu():
         [
             InlineKeyboardButton("🇦🇿 Umico", callback_data="site_umico")
         ],
+        [
+            InlineKeyboardButton("✏️ Custom Site", callback_data="site_custom")
+        ],
         [InlineKeyboardButton("🔙 Back", callback_data="menu")]
     ])
 
@@ -151,28 +154,40 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # SITE SELECTION
     elif data.startswith("site_"):
         site_choice = data.replace("site_", "")
-        context.user_data['selected_site'] = site_choice
-        context.user_data['waiting_for'] = 'search'
         
-        site_names = {
-            "all": "🌐 All Sites",
-            "amazon": "📦 Amazon",
-            "ebay": "🛍️ eBay",
-            "walmart": "🏪 Walmart",
-            "bestbuy": "🔵 BestBuy",
-            "etsy": "🎨 Etsy",
-            "newegg": "💻 Newegg",
-            "umico": "🇦🇿 Umico"
-        }
-        
-        selected_name = site_names.get(site_choice, "All Sites")
-        
-        await query.edit_message_text(
-            f"✅ *Selected:* {selected_name}\n\n"
-            f"🔍 *Now enter product name:*\n\n"
-            f"_Type the product you want to search..._",
-            parse_mode="Markdown"
-        )
+        # Handle custom site
+        if site_choice == "custom":
+            context.user_data['waiting_for'] = 'custom_site'
+            await query.edit_message_text(
+                f"✏️ *Custom Site*\n\n"
+                f"📝 *Enter the website URL:*\n\n"
+                f"_Example: trendyol.com or aliexpress.com_\n"
+                f"_(Don't include https:// or www.)_",
+                parse_mode="Markdown"
+            )
+        else:
+            context.user_data['selected_site'] = site_choice
+            context.user_data['waiting_for'] = 'search'
+            
+            site_names = {
+                "all": "🌐 All Sites",
+                "amazon": "📦 Amazon",
+                "ebay": "🛍️ eBay",
+                "walmart": "🏪 Walmart",
+                "bestbuy": "🔵 BestBuy",
+                "etsy": "🎨 Etsy",
+                "newegg": "💻 Newegg",
+                "umico": "🇦🇿 Umico"
+            }
+            
+            selected_name = site_names.get(site_choice, "All Sites")
+            
+            await query.edit_message_text(
+                f"✅ *Selected:* {selected_name}\n\n"
+                f"🔍 *Now enter product name:*\n\n"
+                f"_Type the product you want to search..._",
+                parse_mode="Markdown"
+            )
     
     # BUY CREDITS
     elif data == "buy_credits":
@@ -332,17 +347,24 @@ async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Get selected site
         selected_site = context.user_data.get('selected_site', 'all')
         
-        site_names = {
-            "all": "🌐 All Sites",
-            "amazon": "📦 Amazon",
-            "ebay": "🛍️ eBay",
-            "walmart": "🏪 Walmart",
-            "bestbuy": "🔵 BestBuy",
-            "etsy": "🎨 Etsy",
-            "newegg": "💻 Newegg",
-            "umico": "🇦🇿 Umico"
-        }
-        site_display = site_names.get(selected_site, "🌐 All Sites")
+        # Handle custom site display
+        if selected_site.startswith("custom:"):
+            custom_url = selected_site.replace("custom:", "")
+            site_display = f"✏️ {custom_url}"
+            search_site = custom_url
+        else:
+            site_names = {
+                "all": "🌐 All Sites",
+                "amazon": "📦 Amazon",
+                "ebay": "🛍️ eBay",
+                "walmart": "🏪 Walmart",
+                "bestbuy": "🔵 BestBuy",
+                "etsy": "🎨 Etsy",
+                "newegg": "💻 Newegg",
+                "umico": "🇦🇿 Umico"
+            }
+            site_display = site_names.get(selected_site, "🌐 All Sites")
+            search_site = selected_site
         
         await update.message.reply_text(
             f"🔍 *Searching:* {text}\n"
@@ -353,7 +375,7 @@ async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Search using Google API with selected site
         loop = asyncio.get_running_loop()
-        results = await loop.run_in_executor(None, fetch_amazon, text, selected_site)
+        results = await loop.run_in_executor(None, fetch_amazon, text, search_site)
         
         if not results:
             await update.message.reply_text(
@@ -402,6 +424,39 @@ async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Show remaining
         remaining = get_available_searches(telegram_id)
         await update.message.reply_text(f"✅ *Search complete!*\n💰 Remaining credits: {remaining}", parse_mode="Markdown")
+    
+    # CUSTOM SITE
+    elif waiting_for == 'custom_site':
+        context.user_data['waiting_for'] = None
+        
+        # Clean the URL input
+        custom_site = text.strip().lower()
+        custom_site = custom_site.replace('https://', '').replace('http://', '').replace('www.', '')
+        
+        # Remove trailing slashes
+        custom_site = custom_site.rstrip('/')
+        
+        # Validate basic URL format
+        if not custom_site or ' ' in custom_site or len(custom_site) < 4:
+            await update.message.reply_text(
+                "❌ *Invalid URL format!*\n\n"
+                "Please enter a valid website URL.\n"
+                "_Example: trendyol.com_",
+                parse_mode="Markdown",
+                reply_markup=main_menu()
+            )
+            return
+        
+        # Save custom site
+        context.user_data['selected_site'] = f"custom:{custom_site}"
+        context.user_data['waiting_for'] = 'search'
+        
+        await update.message.reply_text(
+            f"✅ *Selected:* {custom_site}\n\n"
+            f"🔍 *Now enter product name:*\n\n"
+            f"_Type the product you want to search..._",
+            parse_mode="Markdown"
+        )
     
     # FEEDBACK
     elif waiting_for == 'feedback':

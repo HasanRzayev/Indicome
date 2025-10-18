@@ -128,7 +128,7 @@ def fetch_google_shopping(query, selected_site="all"):
     
     Args:
         query: Search query
-        selected_site: Site to search from (all, amazon, ebay, walmart, bestbuy, etsy, newegg, umico)
+        selected_site: Site to search from (all, amazon, ebay, walmart, bestbuy, etsy, newegg, umico, or custom URL)
     """
     all_results = []
     
@@ -151,6 +151,10 @@ def fetch_google_shopping(query, selected_site="all"):
     elif selected_site in site_map:
         # Search only selected site with more results
         all_results.extend(_search_with_failover(query, site_map[selected_site], 10))
+    else:
+        # Custom site - treat as custom URL
+        logging.info(f"[Google] Custom site search: {selected_site}")
+        all_results.extend(_search_with_failover(query, [selected_site], 10))
     
     logging.info(f"[Google] Site: {selected_site}, Total: {len(all_results)} products")
     return all_results
