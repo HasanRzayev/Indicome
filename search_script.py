@@ -122,14 +122,37 @@ def _search_with_failover(query, sites, max_results):
     
     return []
 
-def fetch_google_shopping(query):
+def fetch_google_shopping(query, selected_site="all"):
+    """
+    Search products from selected site(s)
+    
+    Args:
+        query: Search query
+        selected_site: Site to search from (all, amazon, ebay, walmart, bestbuy, etsy, newegg, umico)
+    """
     all_results = []
-    all_results.extend(_search_with_failover(query, ["amazon.com", "ebay.com"], 4))
-    all_results.extend(_search_with_failover(query, ["walmart.com", "bestbuy.com"], 3))
-    all_results.extend(_search_with_failover(query, ["etsy.com", "newegg.com"], 3))
-    # Search Umico with both English and Azerbaijani terms
-    all_results.extend(_search_with_failover(query, ["umico.az"], 4))
-    logging.info(f"[Google] Total: {len(all_results)} products")
+    
+    site_map = {
+        "amazon": ["amazon.com"],
+        "ebay": ["ebay.com"],
+        "walmart": ["walmart.com"],
+        "bestbuy": ["bestbuy.com"],
+        "etsy": ["etsy.com"],
+        "newegg": ["newegg.com"],
+        "umico": ["umico.az"]
+    }
+    
+    if selected_site == "all":
+        # Search all sites
+        all_results.extend(_search_with_failover(query, ["amazon.com", "ebay.com"], 4))
+        all_results.extend(_search_with_failover(query, ["walmart.com", "bestbuy.com"], 3))
+        all_results.extend(_search_with_failover(query, ["etsy.com", "newegg.com"], 3))
+        all_results.extend(_search_with_failover(query, ["umico.az"], 4))
+    elif selected_site in site_map:
+        # Search only selected site with more results
+        all_results.extend(_search_with_failover(query, site_map[selected_site], 10))
+    
+    logging.info(f"[Google] Site: {selected_site}, Total: {len(all_results)} products")
     return all_results
 
 def filter_results(results, filter_type="all"):
@@ -145,8 +168,8 @@ def filter_results(results, filter_type="all"):
         return sorted(results, key=lambda x: x['price_value'])[:5]
     return results
 
-def fetch_amazon(query):
-    return fetch_google_shopping(query)
+def fetch_amazon(query, selected_site="all"):
+    return fetch_google_shopping(query, selected_site)
 
 def fetch_ebay(query):
     return []

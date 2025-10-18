@@ -31,6 +31,30 @@ def main_menu():
         [InlineKeyboardButton("ℹ️ Help", callback_data="help")]
     ])
 
+def site_selection_menu():
+    """Site selection buttons"""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🌐 Hamısı", callback_data="site_all")
+        ],
+        [
+            InlineKeyboardButton("📦 Amazon", callback_data="site_amazon"),
+            InlineKeyboardButton("🛍️ eBay", callback_data="site_ebay")
+        ],
+        [
+            InlineKeyboardButton("🏪 Walmart", callback_data="site_walmart"),
+            InlineKeyboardButton("🔵 BestBuy", callback_data="site_bestbuy")
+        ],
+        [
+            InlineKeyboardButton("🎨 Etsy", callback_data="site_etsy"),
+            InlineKeyboardButton("💻 Newegg", callback_data="site_newegg")
+        ],
+        [
+            InlineKeyboardButton("🇦🇿 Umico", callback_data="site_umico")
+        ],
+        [InlineKeyboardButton("🔙 Geri", callback_data="menu")]
+    ])
+
 def filter_menu():
     """Filter buttons"""
     return InlineKeyboardMarkup([
@@ -116,13 +140,39 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💳 Buy Credits", callback_data="buy_credits")]])
             )
         else:
-            context.user_data['waiting_for'] = 'search'
             await query.edit_message_text(
-                f"🔍 *Enter product name:*\n\n"
-                f"💰 Available: {credits} credits\n\n"
-                f"_Type the product you want to search..._",
-                parse_mode="Markdown"
+                f"🌐 *Hansı saytlardan axtarış edək?*\n\n"
+                f"💰 Kredit: {credits}\n\n"
+                f"_Axtarış etmək istədiyiniz saytı seçin:_",
+                parse_mode="Markdown",
+                reply_markup=site_selection_menu()
             )
+    
+    # SITE SELECTION
+    elif data.startswith("site_"):
+        site_choice = data.replace("site_", "")
+        context.user_data['selected_site'] = site_choice
+        context.user_data['waiting_for'] = 'search'
+        
+        site_names = {
+            "all": "🌐 Hamısı",
+            "amazon": "📦 Amazon",
+            "ebay": "🛍️ eBay",
+            "walmart": "🏪 Walmart",
+            "bestbuy": "🔵 BestBuy",
+            "etsy": "🎨 Etsy",
+            "newegg": "💻 Newegg",
+            "umico": "🇦🇿 Umico"
+        }
+        
+        selected_name = site_names.get(site_choice, "Hamısı")
+        
+        await query.edit_message_text(
+            f"✅ *Seçildi:* {selected_name}\n\n"
+            f"🔍 *İndi məhsul adı yazın:*\n\n"
+            f"_Axtarmaq istədiyiniz məhsulun adını yazın..._",
+            parse_mode="Markdown"
+        )
     
     # BUY CREDITS
     elif data == "buy_credits":
@@ -279,14 +329,39 @@ async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ No credits!", reply_markup=main_menu())
             return
         
-        await update.message.reply_text(f"🔍 *Searching for:* {text}\n⏳ Please wait...", parse_mode="Markdown")
+        # Get selected site
+        selected_site = context.user_data.get('selected_site', 'all')
         
-        # Search using Google API
+        site_names = {
+            "all": "🌐 Bütün saytlar",
+            "amazon": "📦 Amazon",
+            "ebay": "🛍️ eBay",
+            "walmart": "🏪 Walmart",
+            "bestbuy": "🔵 BestBuy",
+            "etsy": "🎨 Etsy",
+            "newegg": "💻 Newegg",
+            "umico": "🇦🇿 Umico"
+        }
+        site_display = site_names.get(selected_site, "🌐 Bütün saytlar")
+        
+        await update.message.reply_text(
+            f"🔍 *Axtarılır:* {text}\n"
+            f"📍 *Sayt:* {site_display}\n"
+            f"⏳ Gözləyin...", 
+            parse_mode="Markdown"
+        )
+        
+        # Search using Google API with selected site
         loop = asyncio.get_running_loop()
-        results = await loop.run_in_executor(None, fetch_amazon, text)
+        results = await loop.run_in_executor(None, fetch_amazon, text, selected_site)
         
         if not results:
-            await update.message.reply_text("😔 *No results found.*\n\n💡 Try different keywords.", parse_mode="Markdown", reply_markup=main_menu())
+            await update.message.reply_text(
+                f"😔 *Nəticə tapılmadı.*\n\n"
+                f"💡 Başqa açar söz sınayın.",
+                parse_mode="Markdown",
+                reply_markup=main_menu()
+            )
             return
         
         # Save results for filtering
@@ -295,22 +370,23 @@ async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Display results
         message = (
-            f"🔍 *Search:* {text}\n"
-            f"🎯 *Found:* {len(results)} products\n\n"
+            f"🔍 *Sorğu:* {text}\n"
+            f"📍 *Sayt:* {site_display}\n"
+            f"🎯 *Tapıldı:* {len(results)} məhsul\n\n"
         )
         
         for i, product in enumerate(results[:10], 1):
             message += (
                 f"{i}. 🌐 *{product['site']}*\n"
                 f"   📦 {product['title'][:55]}...\n"
-                f"   💰 *Price:* {product['price']}\n"
-                f"   [🔗 View Product]({product['link']})\n\n"
+                f"   💰 *Qiymət:* {product['price']}\n"
+                f"   [🔗 Bax]({product['link']})\n\n"
             )
         
         if len(results) > 10:
-            message += f"_...and {len(results) - 10} more products_\n\n"
+            message += f"_...və {len(results) - 10} məhsul daha_\n\n"
         
-        message += "👇 _Use filters to sort:_"
+        message += "👇 _Filter seçin:_"
         
         await update.message.reply_text(
             message,
@@ -321,11 +397,11 @@ async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Deduct credit
         increment_search_count(telegram_id)
-        log_search_query(telegram_id, text)
+        log_search_query(telegram_id, f"{text} [{selected_site}]")
         
         # Show remaining
         remaining = get_available_searches(telegram_id)
-        await update.message.reply_text(f"✅ *Search complete!*\n💰 Remaining credits: {remaining}", parse_mode="Markdown")
+        await update.message.reply_text(f"✅ *Axtarış tamamlandı!*\n💰 Qalan kredit: {remaining}", parse_mode="Markdown")
     
     # FEEDBACK
     elif waiting_for == 'feedback':
