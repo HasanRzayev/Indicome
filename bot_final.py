@@ -74,7 +74,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "   • Walmart\n"
             "   • Best Buy\n"
             "   • Etsy\n"
-            "   • Newegg\n\n"
+            "   • Newegg\n"
+            "   • Umico\n\n"
             f"💰 *Your Credits:* {credits}\n\n"
             "👇 Choose an option below:"
         )
@@ -179,14 +180,14 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🔍 *How to search:*\n"
             "1. Click 'Search Products'\n"
             "2. Enter product name\n"
-            "3. Get results from 7 stores!\n\n"
+            "3. Get results from 8 stores!\n\n"
             "💰 *Pricing:*\n"
             "• 1 Search = 1 Credit\n"
             "• New users get 3 FREE credits\n"
             "• Buy more credits anytime\n\n"
             "🌐 *Supported Stores:*\n"
             "Amazon • eBay • Walmart\n"
-            "BestBuy • Etsy • Newegg\n\n"
+            "BestBuy • Etsy • Newegg • Umico\n\n"
             "💡 *Features:*\n"
             "• Filter by price\n"
             "• Direct product links\n"
@@ -395,4 +396,6 @@ if __name__ == "__main__":
     
     # Run with auto-restart
     app.run_polling(drop_pending_updates=True)
+
+
 

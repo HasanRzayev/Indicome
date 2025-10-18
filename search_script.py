@@ -106,6 +106,7 @@ def fetch_google_shopping(query):
     all_results.extend(_search_with_failover(query, ["amazon.com", "ebay.com"], 4))
     all_results.extend(_search_with_failover(query, ["walmart.com", "bestbuy.com"], 3))
     all_results.extend(_search_with_failover(query, ["etsy.com", "newegg.com"], 3))
+    all_results.extend(_search_with_failover(query, ["umico.az"], 3))
     logging.info(f"[Google] Total: {len(all_results)} products")
     return all_results
 
