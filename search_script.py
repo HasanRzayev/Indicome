@@ -20,10 +20,16 @@ def extract_site_name(url):
 def extract_price_value(price_str):
     if not price_str or "Check" in price_str:
         return 999999
+    
+    # Extract numeric value
     match = re.search(r'(\d+[.,]?\d*)', price_str.replace(',', ''))
     if match:
         try:
-            return float(match.group(1))
+            value = float(match.group(1))
+            # Convert AZN to USD for comparison (1 AZN ≈ 0.59 USD)
+            if '₼' in price_str or 'AZN' in price_str or 'manat' in price_str.lower():
+                value = value * 0.59  # Convert to USD equivalent
+            return value
         except:
             return 999999
     return 999999
@@ -54,16 +60,31 @@ def _parse_search_items(items):
             if len(title) < 15 or not link:
                 continue
             
-            if not any(i in link for i in ['/dp/', '/itm/', '/ip/', '/listing/', '/product/', 'sku=']):
+            if not any(i in link for i in ['/dp/', '/itm/', '/ip/', '/listing/', '/product/', '/products/', 'sku=']):
                 continue
             
             site_name = extract_site_name(link)
             price = "Check site"
             
+            # Check for various price formats
             for text in [title, snippet]:
+                # Dollar prices
                 m = re.search(r'[\$]\s*(\d+[.,]?\d*)', text)
                 if m:
                     price = f"${m.group(1)}"
+                    break
+                # Manat/AZN prices (for Umico)
+                m = re.search(r'(\d+[.,]?\d*)\s*[₼]', text)
+                if m:
+                    price = f"{m.group(1)} ₼"
+                    break
+                m = re.search(r'(\d+[.,]?\d*)\s*AZN', text, re.IGNORECASE)
+                if m:
+                    price = f"{m.group(1)} ₼"
+                    break
+                m = re.search(r'(\d+[.,]?\d*)\s*manat', text, re.IGNORECASE)
+                if m:
+                    price = f"{m.group(1)} ₼"
                     break
             
             results.append({
@@ -106,7 +127,8 @@ def fetch_google_shopping(query):
     all_results.extend(_search_with_failover(query, ["amazon.com", "ebay.com"], 4))
     all_results.extend(_search_with_failover(query, ["walmart.com", "bestbuy.com"], 3))
     all_results.extend(_search_with_failover(query, ["etsy.com", "newegg.com"], 3))
-    all_results.extend(_search_with_failover(query, ["umico.az"], 3))
+    # Search Umico with both English and Azerbaijani terms
+    all_results.extend(_search_with_failover(query, ["umico.az"], 4))
     logging.info(f"[Google] Total: {len(all_results)} products")
     return all_results
 
