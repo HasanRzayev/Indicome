@@ -211,11 +211,10 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         if pkg:
             payment_url = create_paypal_payment(
-                telegram_id,
-                pkg['price'],
-                "credits",
-                pkg['credits'],
-                pkg['name']
+                telegram_id=telegram_id,
+                amount=pkg['price'],
+                credits=pkg['credits'],
+                description=pkg['name']
             )
             
             if payment_url:
@@ -223,11 +222,18 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     f"💳 *{pkg['name']}*\n\n"
                     f"💰 Price: ${pkg['price']:.2f}\n"
                     f"🔍 Credits: {pkg['credits']} searches\n\n"
-                    f"[✅ Complete Payment]({payment_url})",
-                    parse_mode="Markdown"
+                    f"[✅ Complete Payment]({payment_url})\n\n"
+                    f"_Click the link above to pay via PayPal_",
+                    parse_mode="Markdown",
+                    disable_web_page_preview=False
                 )
             else:
-                await query.edit_message_text("❌ Payment error. Try again.", reply_markup=main_menu())
+                await query.edit_message_text(
+                    "❌ *Payment error!*\n\n"
+                    "Please try again or contact support.",
+                    parse_mode="Markdown",
+                    reply_markup=main_menu()
+                )
     
     # FEEDBACK
     elif data == "feedback":

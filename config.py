@@ -20,9 +20,10 @@ PAYPAL_MODE = "sandbox"  # "sandbox" for testing, "live" for production
 PAYPAL_CLIENT_ID = "AaTBl7vZ-aaxFG1sRvvKM1rMxkB_An5-kCdvW42Fgry3t0ZgiWM2kM0XjkflPj2KwY5E4yzr7VZBditA"
 PAYPAL_CLIENT_SECRET = "EGbnhZIYwzE-XX4FR0wrguw4nW8iJuyLUpxI_vilIl5_pPpZuvOjKcfkWH0HSqxDja1yR4oz67w5lr0B"
 
-# Payment redirect URLs
-PAYMENT_SUCCESS_URL = "https://your-domain.com/payment/success"
-PAYMENT_CANCEL_URL = "https://your-domain.com/payment/cancel"
+# Payment redirect URLs (Telegram bot doesn't need real URLs, but PayPal requires them)
+# You can use a simple static page or just return to a thank you message
+PAYMENT_SUCCESS_URL = "https://t.me/your_bot_username?start=payment_success"
+PAYMENT_CANCEL_URL = "https://t.me/your_bot_username?start=payment_cancelled"
 
 # ============================================================================
 # CREDIT PACKAGES
