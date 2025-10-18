@@ -35,7 +35,7 @@ def site_selection_menu():
     """Site selection buttons"""
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("🌐 Hamısı", callback_data="site_all")
+            InlineKeyboardButton("🌐 All Sites", callback_data="site_all")
         ],
         [
             InlineKeyboardButton("📦 Amazon", callback_data="site_amazon"),
@@ -52,7 +52,7 @@ def site_selection_menu():
         [
             InlineKeyboardButton("🇦🇿 Umico", callback_data="site_umico")
         ],
-        [InlineKeyboardButton("🔙 Geri", callback_data="menu")]
+        [InlineKeyboardButton("🔙 Back", callback_data="menu")]
     ])
 
 def filter_menu():
@@ -141,9 +141,9 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         else:
             await query.edit_message_text(
-                f"🌐 *Hansı saytlardan axtarış edək?*\n\n"
-                f"💰 Kredit: {credits}\n\n"
-                f"_Axtarış etmək istədiyiniz saytı seçin:_",
+                f"🌐 *Which sites to search?*\n\n"
+                f"💰 Credits: {credits}\n\n"
+                f"_Select the site you want to search:_",
                 parse_mode="Markdown",
                 reply_markup=site_selection_menu()
             )
@@ -155,7 +155,7 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['waiting_for'] = 'search'
         
         site_names = {
-            "all": "🌐 Hamısı",
+            "all": "🌐 All Sites",
             "amazon": "📦 Amazon",
             "ebay": "🛍️ eBay",
             "walmart": "🏪 Walmart",
@@ -165,12 +165,12 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "umico": "🇦🇿 Umico"
         }
         
-        selected_name = site_names.get(site_choice, "Hamısı")
+        selected_name = site_names.get(site_choice, "All Sites")
         
         await query.edit_message_text(
-            f"✅ *Seçildi:* {selected_name}\n\n"
-            f"🔍 *İndi məhsul adı yazın:*\n\n"
-            f"_Axtarmaq istədiyiniz məhsulun adını yazın..._",
+            f"✅ *Selected:* {selected_name}\n\n"
+            f"🔍 *Now enter product name:*\n\n"
+            f"_Type the product you want to search..._",
             parse_mode="Markdown"
         )
     
@@ -333,7 +333,7 @@ async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
         selected_site = context.user_data.get('selected_site', 'all')
         
         site_names = {
-            "all": "🌐 Bütün saytlar",
+            "all": "🌐 All Sites",
             "amazon": "📦 Amazon",
             "ebay": "🛍️ eBay",
             "walmart": "🏪 Walmart",
@@ -342,12 +342,12 @@ async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "newegg": "💻 Newegg",
             "umico": "🇦🇿 Umico"
         }
-        site_display = site_names.get(selected_site, "🌐 Bütün saytlar")
+        site_display = site_names.get(selected_site, "🌐 All Sites")
         
         await update.message.reply_text(
-            f"🔍 *Axtarılır:* {text}\n"
-            f"📍 *Sayt:* {site_display}\n"
-            f"⏳ Gözləyin...", 
+            f"🔍 *Searching:* {text}\n"
+            f"📍 *Site:* {site_display}\n"
+            f"⏳ Please wait...", 
             parse_mode="Markdown"
         )
         
@@ -357,8 +357,8 @@ async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         if not results:
             await update.message.reply_text(
-                f"😔 *Nəticə tapılmadı.*\n\n"
-                f"💡 Başqa açar söz sınayın.",
+                f"😔 *No results found.*\n\n"
+                f"💡 Try different keywords.",
                 parse_mode="Markdown",
                 reply_markup=main_menu()
             )
@@ -370,23 +370,23 @@ async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Display results
         message = (
-            f"🔍 *Sorğu:* {text}\n"
-            f"📍 *Sayt:* {site_display}\n"
-            f"🎯 *Tapıldı:* {len(results)} məhsul\n\n"
+            f"🔍 *Search:* {text}\n"
+            f"📍 *Site:* {site_display}\n"
+            f"🎯 *Found:* {len(results)} products\n\n"
         )
         
         for i, product in enumerate(results[:10], 1):
             message += (
                 f"{i}. 🌐 *{product['site']}*\n"
                 f"   📦 {product['title'][:55]}...\n"
-                f"   💰 *Qiymət:* {product['price']}\n"
-                f"   [🔗 Bax]({product['link']})\n\n"
+                f"   💰 *Price:* {product['price']}\n"
+                f"   [🔗 View]({product['link']})\n\n"
             )
         
         if len(results) > 10:
-            message += f"_...və {len(results) - 10} məhsul daha_\n\n"
+            message += f"_...and {len(results) - 10} more products_\n\n"
         
-        message += "👇 _Filter seçin:_"
+        message += "👇 _Choose filter:_"
         
         await update.message.reply_text(
             message,
@@ -401,7 +401,7 @@ async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Show remaining
         remaining = get_available_searches(telegram_id)
-        await update.message.reply_text(f"✅ *Axtarış tamamlandı!*\n💰 Qalan kredit: {remaining}", parse_mode="Markdown")
+        await update.message.reply_text(f"✅ *Search complete!*\n💰 Remaining credits: {remaining}", parse_mode="Markdown")
     
     # FEEDBACK
     elif waiting_for == 'feedback':
