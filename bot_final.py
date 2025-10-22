@@ -62,10 +62,6 @@ def filter_menu():
     """Filter buttons"""
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("💰 Cheapest First", callback_data="filter_cheapest"),
-            InlineKeyboardButton("💎 Most Expensive", callback_data="filter_expensive")
-        ],
-        [
             InlineKeyboardButton("🏆 Top 3 Deals", callback_data="filter_top3"),
             InlineKeyboardButton("⭐ Top 5 Deals", callback_data="filter_top5")
         ],
